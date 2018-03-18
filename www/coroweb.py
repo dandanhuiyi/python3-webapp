@@ -123,8 +123,10 @@ class RequestHandler(object):
                 if k in kw:
                     logging.warning('Duplicate arg name in named arg and kw args: %s' % k)
                 kw[k] = v
-        
         if self._has_request_arg:
+            kw['request'] = request
+        #check required   kw:    
+        if self._required_kw_args:
             for name in self._required_kw_args:
                 if not name in kw:
                     return web.HTTPBadRequest(text='Missing argument: %s' % name)
@@ -141,6 +143,16 @@ def add_static(app):
     app.router.add_static('/static/', path)
     logging.info('add static %s => %s' % ('/static', path))
 
+def add_route(app, fn):
+    method = getattr(fn, '__method__', None)
+    path = getattr(fn, '__route__', None)
+    if path is None or method is None:
+        raise ValueError('@get or @post not defined in %s.' % str(fn))
+    if not asyncio.iscoroutinefunction(fn) and not inspect.isgeneratorfunction(fn):
+        fn = asyncio.coroutine(fn)
+    logging.info('add route %s %s=>%s(%s)' % (method, path, fn.__name__, ', '.join(inspect.signature(fn).parameters.keys())))
+    app.router.add_route(method, path, RequestHandler(app,fn))
+
 def add_routes(app, module_name):
     n = module_name.rfind('.')
     if n == -1:
@@ -156,6 +168,6 @@ def add_routes(app, module_name):
             method = getattr(fn,'__method__', None)
             path = getattr(fn, '__route__', None)
             if method and path:
-                add_routes(app, fn)
+                add_route(app, fn)
     
 
