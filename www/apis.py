@@ -4,6 +4,20 @@ JSON API definition
 
 import json, logging, inspect, functools
 
+# class Page(object):
+#     '''
+#     Page object for display pages.
+#     '''
+#     def __init__(self, item_count, page_index=1, page_size=10):
+#         '''
+#         Init pagination by item_count, page_index, page_size.
+#         '''
+#         >>> p1 = Page(100,1)
+#         >>> p1.page_count
+#         10
+#         >>> p1.offset
+
+
 class APIError(Exception):
     '''
     the base APIError which contains error(required), data(optional) and message(optional).
@@ -35,3 +49,7 @@ class APIPermissionError(APIError):
     '''
     def __init__(self, message=''):
         super(APIPermissionError, self).__init__('permission:forbidden', 'permission', message)
+
+if __name__ == '__main__':
+    import doctest
+    doctest.testmod()
