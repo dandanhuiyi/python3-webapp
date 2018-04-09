@@ -2,7 +2,7 @@ import re, time, json, logging, hashlib, base64, asyncio
 import markdown2
 from coroweb import get, post
 from models import User, Comment, Blog, next_id
-from apis import APIValueError, APIResourceNotFoundError, APIError, APIPermissionError
+from apis import APIValueError, APIResourceNotFoundError, APIError, APIPermissionError, Page
 from aiohttp import web
 from config import configs
 
@@ -151,7 +151,16 @@ async def api_get_users():
     users = await User.findAll(orderBy='created_at desc')
     for u in users:
         u.passwd= '******'
-    return dict(users=users)
+    return dict(users=users)@get('/manage/blogs/create')
+
+@get('/manage/blogs')
+def manage_blogs(*, page='1'):
+    return {
+        '__template__': '/manage_blogs.html',
+        'page_index':get_page_index(page)
+    }
+
+
 
 @get('/manage/blogs/create')
 def manage_create_blog():
@@ -187,6 +196,15 @@ async def api_register_user(*, email, name,passwd):
     r.body = json.dumps(user, ensure_ascii=False).encode('utf-8')
     return r
 
+@get('/api/blogs')
+async def api_blogs(*, page='1'):
+    page_index = get_page_index(page)
+    num = await Blog.findNumber('count(id)')
+    p = Page(num, page_index)
+    if num == 0:
+        return dict(page=p, blogs=())
+    blogs = await Blog.findAll(orderBy='created_at desc', limit=(p.offset, p.limit))
+    return dict(page=p, blogs=blogs)
 
 @get('/api/blogs/{id}')
 async def api_get_blog(*, id):
